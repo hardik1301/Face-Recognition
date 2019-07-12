@@ -1,0 +1,82 @@
+import numpy as np
+faces_image = np.load('..\minor sem5\olivetti_faces.npy')
+faces_target = np.load('..\minor sem5\olivetti_faces_target.npy')
+#faces_image
+
+n_row = 64
+n_col = 64
+faces_image.shape
+
+faces_data = faces_image.reshape(faces_image.shape[0], faces_image.shape[1] * faces_image.shape[2])
+faces_data.shape
+#print(faces_target)
+import warnings
+warnings.filterwarnings("ignore")
+from skimage.io import imshow
+loadImage = faces_image[20]
+#imshow(loadImage)
+#loadImage.shape
+
+
+n_samples,h,w = faces_image.shape
+   # for machine learning we use the 2 data directly
+X = faces_data
+n_features = faces_data.shape[1]
+   # the label to predict is the id of the person
+y = faces_target
+n_classes = faces_target.shape[0]
+
+#print("Total dataset size:")
+#print("n_samples: %d" % n_samples)
+#print("n_features: %d" % n_features)
+#print("n_classes: %d" % n_classes)
+
+from sklearn.cross_validation import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.decomposition import RandomizedPCA 
+from sklearn import metrics
+from sklearn.svm import SVC
+from sklearn.model_selection import GridSearchCV
+
+X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=.25,random_state=42)
+#print("Xtrain",X_train)
+#print("Length of Xtrain:",len(X_train))
+#print("Xtest",X_test)
+#print("Length of Xtest:",len(X_test))
+#print("ytrain",y_train)
+#print("Length of ytrain:",len(y_train))
+#print("ytest",y_test)
+#print("Length of ytest:",len(y_test))
+
+
+ #k=150 reduced dimensionality
+n_components=150
+
+  #find top n principal components in the data
+pca=RandomizedPCA(n_components=n_components,whiten=True).fit(X_train)
+
+  #eigen vector faces
+eigenfaces=pca.components_.reshape((n_components,h,w))
+
+  #training & testing set of reduced dimensional dataset
+X_train_pca=pca.transform(X_train)
+X_test_pca=pca.transform(X_test)
+  
+    #using knn classifier
+knn_classifier=KNeighborsClassifier(n_neighbors=5)
+knn_classifier.fit(X_train_pca,y_train)
+
+  #detect faces in the test set
+y_pred_test=knn_classifier.predict(X_test_pca)
+#print(y_pred_test)
+print("Knn accuracy:", metrics.accuracy_score(y_test,y_pred_test)*100)
+
+   #using svm classifier
+param_grid = {'C': [1e3, 5e3, 1e4, 5e4, 1e5],
+              'gamma': [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.1], }
+clf = GridSearchCV(SVC(kernel='rbf', class_weight='balanced'), param_grid)
+clf = clf.fit(X_train_pca, y_train)
+#print(clf.best_estimator_)
+
+y_pred = clf.predict(X_test_pca)
+print("SVM accuracy:",metrics.accuracy_score(y_test,y_pred)*100)
