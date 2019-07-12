@@ -4,5 +4,5 @@ The technique used for the purpose of Face Recognition is Principal Component An
 The Dataset used is Olivetti Dataset.
 SVM being a better approach than KNN gives better accuracy.  
 Accuracies-
-   KNN-56.99%
-   SVM-96%  
+   KNN-59%
+   SVM-95%  
